@@ -1,43 +1,43 @@
 # Session Invoicer
 
-A simple web app for online teachers. Import your Google Calendar sessions, match messy client names to the right client, and generate invoices (PDF, WhatsApp text, copy/share) for any date range.
+Creates client invoices from your Google Calendar. Plain HTML, CSS and JavaScript, plus one small Vercel serverless function for live calendar sync.
 
-Built with plain HTML, CSS and JavaScript. There is no build step and no backend.
-
-## Features
-- Import sessions from a Google Calendar `.ics` export (re-import any time, no duplicates)
-- Smart client matching: different spellings of the same client are treated as one
-- Sessions table with filters by client, date range and title
-- Invoice = number of sessions x rate, for any date range
-- Download a PDF, send via WhatsApp, copy text, or use the phone share sheet
-- Responsive: bottom tab bar and card-style lists on phones, full tables on PC
-- Quick date presets (This month, Last month, Last 30 days)
-- Backup and restore (download a .json file to move data between PC and phone)
-- Works on PC and phone; data is stored in the browser (localStorage)
+## How billing works
+- **One calendar event = one charge** (default 250), whatever its length or title.
+- Cancelled sessions are deleted from the calendar, so they never appear on an invoice.
+- Moved sessions, repeating sessions and skipped dates are handled correctly.
+- One invoice per client or family. The calendar title identifies the client; spelling variants are grouped.
+- The rate can be changed in Setup (default), per client, or on a single invoice.
+- Invoices always use the latest calendar: the app re-syncs when opened and before invoicing.
 
 ## Files
 | File | Purpose |
 |---|---|
-| `index.html` | Page structure |
-| `style.css` | Styling (light and dark mode) |
-| `app.js` | All logic: import, matching, invoice, PDF |
-| `vercel.json` | Vercel settings |
-
-## Run locally
-Open `index.html` in a browser, or run `npx serve .`
-
-## How to use
-1. Google Calendar > Settings > Import & export > Export, unzip, keep the `.ics` file.
-2. Import tab: upload the `.ics` file and fill in your name and payment details.
-3. Clients tab: add clients with a rate; assign any unmatched calendar names.
-4. Invoice tab: choose client and dates, then download or share.
+| `index.html`, `style.css` | Page and styling (phone and PC) |
+| `app.js` | Sessions, clients, invoice, PDF, WhatsApp |
+| `ics.js` | Calendar parser (recurring events, exceptions, time zones) |
+| `api/calendar.js` | Vercel function: fetches your private calendar link, password protected |
+| `vercel.json`, `package.json` | Vercel settings |
 
 ## Deploy
-1. Push this folder to a GitHub repository.
-2. On vercel.com choose Add New > Project, import the repository, leave all build settings empty and press Deploy.
-3. Every `git push` to `main` redeploys automatically.
+1. Push this folder to GitHub (the `.gitignore` already blocks `.ics` files; never commit calendar exports).
+2. vercel.com > Add New > Project > import the repo > Deploy.
+3. Enable live sync:
+   - Google Calendar (on a PC) > Settings > click your work calendar > **Integrate calendar** > copy **Secret address in iCal format**.
+   - Vercel > Project > Settings > Environment Variables, add:
+     - `CALENDAR_ICS_URL` = the secret address you copied
+     - `APP_PASSWORD` = a password you choose
+   - Redeploy (Deployments > ... > Redeploy).
+4. Open the site, tap Sync, enter the password once.
 
-## Known limits
-- Recurring calendar events count only their first date.
-- Data lives in each browser separately (PC and phone do not sync).
-- PDFs show "Rs." in place of the rupee symbol.
+Treat the secret address like a password. Anyone who has it can read your calendar. If it leaks, reset it in Google Calendar.
+
+## First-time setup
+1. Setup tab: set your name, payment details and default rate.
+2. Clients tab: review the suggested client groups, then Create.
+3. Invoice tab: type a client name, pick a month, then PDF, WhatsApp or copy.
+
+## Notes
+- Clients and settings are stored in the browser; use Setup > Backup to move them between devices.
+- Without live sync you can upload a `.ics` export in Setup instead.
+- Run locally with `npx vercel dev` (the sync function needs Vercel).
