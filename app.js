@@ -2,7 +2,7 @@
 const KEY = 'session-invoicer-v2', DEF = { cur: '₹', me: '', pay: '', tz: 'Asia/Kolkata', rate: 250, pw: '' };
 let S = { clients: [], map: {}, set: { ...DEF }, inv: 1, rows: [], titles: [], off: [], synced: 0 };
 try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) { S = Object.assign(S, d); S.set = { ...DEF, ...(d.set || {}) } } } catch (e) { }
-let tab = 'sessions', F = { cl: '', from: '', to: '', q: '', n: 100 }, C = { q: '', min: 5, l: '' }, I = { cn: '', cid: '', mo: '', from: '', to: '', rate: '', no: '', note: '' }, msg = '', EV = [], CC = new Map(), GR = null, syncing = false;
+let tab = 'sessions', F = { cl: '', from: '', to: '', q: '', n: 100, fut: false }, C = { q: '', min: 5, l: '' }, I = { cn: '', cid: '', mo: '', from: '', to: '', rate: '', no: '', note: '' }, msg = '', EV = [], CC = new Map(), GR = null, syncing = false;
 const $ = s => document.querySelector(s), uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function save() { CC.clear(); GR = null; try { localStorage.setItem(KEY, JSON.stringify(S)) } catch (e) { msg = '⚠️ Browser storage is full. Download a backup from Setup.' } }
@@ -86,14 +86,15 @@ const presets = o => `<div class="btns" style="margin:8px 0 0">${[['thisMonth', 
 const copts = (sel, all) => (all ? `<option value="">${all}</option>` : '') + [...S.clients].sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.id}" ${sel === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
 /* ---------- sessions ---------- */
-function filt() { return EV.filter(e => (!F.from || e.day >= F.from) && (!F.to || e.day <= F.to) && (!F.q || e.title.toLowerCase().includes(F.q.toLowerCase())) && (!F.cl || (F.cl === '__none' ? !clientOf(e.title) : clientOf(e.title) === F.cl))) }
+function filt() { const now = Date.now(); return EV.filter(e => (F.fut || F.to || e.start <= now) && (!F.from || e.day >= F.from) && (!F.to || e.day <= F.to) && (!F.q || e.title.toLowerCase().includes(F.q.toLowerCase())) && (!F.cl || (F.cl === '__none' ? !clientOf(e.title) : clientOf(e.title) === F.cl))) }
 function vSessions() {
     if (!EV.length) return `<div class="card"><b>No calendar data yet.</b><p class="mu">${msg || 'Tap ⟳ Sync, or upload a .ics file in Setup.'}</p></div>`;
     const r = filt().reverse(), act = r.filter(e => !e.off), shown = r.slice(0, F.n);
     return `<div class="card">${msg ? `<div class="warn">${esc(msg)}</div>` : ''}<div class="row"><div><label>Client</label><select onchange="F.cl=this.value;F.n=100;render()">${copts(F.cl, 'All clients')}<option value="__none" ${F.cl === '__none' ? 'selected' : ''}>Not matched</option></select></div>
 <div><label>From</label><input type="date" value="${F.from}" onchange="F.from=this.value;F.n=100;render()"></div><div><label>To</label><input type="date" value="${F.to}" onchange="F.to=this.value;F.n=100;render()"></div>
-<div><label>Search title</label><input value="${esc(F.q)}" onchange="F.q=this.value;F.n=100;render()"></div></div>${presets('F')}
-<p class="mu"><b>${act.length}</b> events${r.length > act.length ? ` (${r.length - act.length} excluded)` : ''}. Newest first. Untick "Count" to leave an event out.</p>
+<div><label>Search title</label><input value="${esc(F.q)}" onchange="F.q=this.value;F.n=100;render()"></div></div>
+<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx);margin-top:10px"><input type="checkbox" style="width:auto;min-height:0" ${F.fut ? 'checked' : ''} onchange="F.fut=this.checked;F.n=100;render()">Include upcoming sessions (not yet taken)</label>${presets('F')}
+<p class="mu"><b>${act.length}</b> events${r.length > act.length ? ` (${r.length - act.length} excluded)` : ''}. Newest first, up to today. Untick "Count" to leave an event out.</p>
 <div class="tw"><table class="rt"><tr><th>Count</th><th>Date</th><th>Time</th><th>Length</th><th>Client</th><th>Calendar title</th></tr>
 ${shown.map(e => { const c = clientOf(e.title); return `<tr class="${e.off ? 'off' : ''}"><td><input type="checkbox" style="width:auto" ${e.off ? '' : 'checked'} onchange="tog('${esc(e.id)}')"></td><td>${fd(e.start)}</td><td>${ft(e.start)}</td><td>${fdur(e.dur)}</td><td>${c ? esc(cl(c).name) : '<span class="mu">not matched</span>'}</td><td class="mu">${esc(e.title)}</td></tr>` }).join('')}</table></div>
 ${r.length > shown.length ? `<div class="btns"><button class="btn s" onclick="F.n+=200;render()">Show 200 more (${r.length - shown.length} left)</button></div>` : ''}</div>`
