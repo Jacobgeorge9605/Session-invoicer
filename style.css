@@ -387,3 +387,25 @@ nav button {
 a {
     color: var(--ac)
 }
+
+.az {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 10px 0 4px
+}
+
+.az .btn {
+    min-width: 34px;
+    padding: 6px 8px
+}
+
+.az .btn.on {
+    background: var(--ac);
+    color: #fff
+}
+
+.az .btn:disabled {
+    opacity: .3;
+    cursor: default
+}
