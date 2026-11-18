@@ -2,9 +2,13 @@
 // Needs: APP_PASSWORD, and an Upstash Redis database connected to the project (Vercel > Storage).
 module.exports = async (req, res) => {
   const pw = process.env.APP_PASSWORD;
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const tok =
-    process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  // Vercel may add a prefix (for example SESSION_INVOICER_KV_REST_API_URL), so match by ending.
+  const find = (re) => {
+    const k = Object.keys(process.env).find((n) => re.test(n));
+    return k ? process.env[k] : undefined;
+  };
+  const url = find(/(KV_REST_API_URL|REDIS_REST_URL)$/);
+  const tok = find(/(KV_REST_API_TOKEN|REDIS_REST_TOKEN)$/);
   if (!pw) {
     res.status(500).json({ error: "APP_PASSWORD is not set" });
     return;
