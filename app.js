@@ -818,7 +818,7 @@ function cbShow(q) {
       .slice(0, 60)
       .map(
         (c) =>
-          `<div class="cbi" onpointerdown="pickId('${c.id}');render()">${esc(c.name)}</div>`,
+          `<div class="cbi" onpointerdown="_pk=Date.now();pickId('${c.id}');render()">${esc(c.name)}</div>`,
       )
       .join("") +
       (m.length > 60
@@ -841,7 +841,9 @@ function pickId(id) {
   I.sid = "";
   I.no = "";
 }
+let _pk = 0;
 function pickClient(v) {
+  if (Date.now() - _pk < 800) return;
   const c = S.clients.find(
     (x) => x.name.toLowerCase() === v.trim().toLowerCase(),
   );
